@@ -112,3 +112,60 @@ K8s Admin:
 * Try with kubeadm
 * Try with openshift
 * Try setting up Jenkins server
+
+
+
+Hands-on:
+`````````
+
+1. How to find out what all apiVersions available for the specific Kind ?
+2. How to export all components from Namespace ?
+3. What are the best practices you would suggest for an application ?
+4. Whats the ideal way of injecting secret to a pod ? Env/Envfrom / "volume" ?
+5. What is PDB ?
+6. What is HPA ?
+7. Can a single Volume be shared multiple containers (readwriteonce policy is enabled)
+	Scenario: configure logging solution, how logstash is collects logs from appl ?
+	Scenario: Load some config first, before starting the actual application. How to achive that ?
+		 eg: Load grafana plugins first & attach to grafana pod. (InitContainer)
+8. Security Topics: ar
+	What are capabilities & when to assign them to pod ?
+9. Deployment Vs Statefulset ?
+10. Webhooks
+11. ImagepullSecret from single namespace ?
+12. Prod Priority & Preemption ?
+13. What URL ApiServer hits for Authentication & Authorization
+14. Security - PSP, SA, Roles, Security Context, No elivated access, Encryption tools, 
+15. 
+
+
+Scheduling:-
+```````````
+1. Why no loads scheduled on Master Node ?	Ans:- taint: "NoSchedule"
+2. Taint/Tolerations Vs Node-Affinity/Anti-Affinity ?
+
+3. What is Pod Evicted means ? 
+	Ans:- Pod is killed. eg- if pod is already deployed, later that node is tainted, then the pod will be killed to get scheduled on diff node.
+4. What are Static Pods ?
+	Ans:- * Under control of kubelet, not by controlplane components.
+	  * by placing manifest file in /etc/kubernetes/manifest/ dir, kubelet creates the pod.
+	  * Readonly by kube-ApiServer
+	  * Pods scheduled by kube-scheduler will be evicted in cases where the node is drained or goes down.
+
+Infra (Admin):
+``````````````
+kubeadm:
+````````
+1. Cluster upgrade steps ?
+2. kubeadm doesnt upgrade kubelet, so update manually !!
+
+Control-plane:
+``````````````
+1. What is inbound/outbound point for k8s cluster? Ans:- kubeApiServer & RouterIP
+2. To Open Firewall from tenant-A --> tenant-B, what source & dest details you will have to provide ?
+	Ans:- Src [ A-RouterIP ] --> Dest [ B-KubeApi ]
+3. Define step by step, what will happen - `kubectl create -f deployment.yaml`
+	Ans:-
+
+4. Can we deploy a custom-Scheduler of our own ? How ?
+Ans: leader-ellect=false
