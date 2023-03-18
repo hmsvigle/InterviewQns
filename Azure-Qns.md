@@ -40,7 +40,35 @@ So how to solve this issue ?
 
 17. Can NSG be assigned to Vnet / Subnet / NIC / All ? 
 	* VNET - No, NIC & Subnet - Yes
-18. 
+18. Service Endpoint VS Private EndPoint ?
+
+19. User Definded Routes (UDR) 
+	* Route Table - Attach to Source
+	* Route 
+		* Address Prefix - VNET Address of Destination
+		* Next Hop - Type  & IP of Appliance (in diff Vnet)
+	* Enable IP Forwarding in Appliance
+
+20. In Vnet Peering How the communication happens ? 
+	* Azure Backbone Network 
+
+21. Add Address Space to 1 Vnet of a peered network, How existing peering will react ?
+	* Re-Peering has to be done from both Vnet end for Consistency.
+
+22. Local gateway configured in case of P2S / S2S Connection ?
+23. How the communicaton happens in S2S VPN Connction ?
+	* IP Sec Channels
+	
+24. Types of LB ? 
+25. Azure Load Balancer 
+	* Basic SKU 	       VS	Standard SKU
+          ``````````		|	````````````
+	  1 VM 			|       Multiple VM 
+	  AV Set/Scaleset	|	Availability Set/Scaleset
+	  No NSG		|	NSG
+				|	99.99% HA
+							
+							
 
 	
 Production AKS Setup:
