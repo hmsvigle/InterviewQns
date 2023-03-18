@@ -169,3 +169,23 @@ Control-plane:
 
 4. Can we deploy a custom-Scheduler of our own ? How ?
 Ans: leader-ellect=false
+
+
+Infra (Admin):
+``````````````
+kubeadm:
+````````
+1. Cluster upgrade steps ?
+2. kubeadm doesnt upgrade kubelet, so update manually !!
+
+Control-plane:
+``````````````
+1. What is inbound/outbound point for k8s cluster? Ans:- kubeApiServer & RouterIP
+2. To Open Firewall from tenant-A --> tenant-B, what source & dest details you will have to provide ?
+	Ans:- Src [ A-RouterIP ] --> Dest [ B-KubeApi ]
+3. Define step by step, what will happen - `kubectl create -f deployment.yaml`
+	Ans:-
+
+4. Can we deploy a custom-Scheduler of our own ? How ?
+Ans: leader-ellect=false
+
