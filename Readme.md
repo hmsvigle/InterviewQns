@@ -5,4 +5,4 @@
 * [Azure](./Azure-Qns.md)
 * [Jenkins](./Jenkins-Qns.md)
 * [Azure DevOps](./Azure-DevOps-Qns.md)
-* Terraform-Qns.md
+* [Terraform](./Terraform-Qns.md)
