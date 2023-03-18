@@ -259,3 +259,26 @@ Parameters based on which pV & PVC binds to each other ?
 	Pre-requisites ?
 
 9. Static Pod ?
+
+Scenario based Qns:
+1. There are 5 deployments & 10 services. How to find out services without any endpoints ?
+2. FE - ns1 & Backend-app : ns2. configure BS url into FE config. What is the url for backend-service ?
+3. What all steps you will take to have High Availability setup for any app ? 
+4. What all security Features you would implement ?
+5. App takes 30s to start. What is Liveness & Readiness Probe Intial delay sec to set ?
+6. When SecurityContext set at container or Pod label, what is the difference ?
+7. Non-root container, Attach PV. Now how to write to the Mounted volume ? 
+	* When we mount the volume, whats the ownership of the directory ? can any user, write to that ?
+	* 
+8. Rollback a deployment command ?
+9. PSP ? Pod Security policy ?
+
+10. kubectl update set image
+11. Node Port Service, What is the IP represent ?
+12. Pod going into Crashloop Backoff
+	* no error in describe & in logs
+	* How to troubleshoot the issue
+	--> What you would do ?
+13. Kubernetes vs Docker Swarm ?
+14. For AKS clutster, 
+
