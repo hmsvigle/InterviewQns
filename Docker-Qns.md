@@ -21,3 +21,7 @@
 		RUN
   * How Enrtypoint can be overwritten in yaml ? 
   * How to run parallel Builds instead of sequential build ?
+1. How to build an image from a docker container ?
+2. containerd vs docker ?
+3. with docker having restrictions on limit for pulling images, how to build new docker images ? Alternative to docker ?
+4. 
