@@ -189,3 +189,73 @@ Control-plane:
 4. Can we deploy a custom-Scheduler of our own ? How ?
 Ans: leader-ellect=false
 
+
+Proxies in kubernetes
+References:
+https://kubernetes.io/docs/concepts/cluster-administration/proxies/
+
+1. Kubectl proxy:
+	Creates a proxy server or application-level gateway between localhost and the Kubernetes API server. It also allows serving static content over specified HTTP path. All incoming data enters through one port and gets forwarded to the remote Kubernetes API server port, except for the path matching the static content path.
+
+o runs on a user's desktop or in a pod
+o proxies from a localhost address to the Kubernetes apiserver
+o client to proxy uses HTTP
+o proxy to apiserver uses HTTPS
+o locates apiserver
+o adds authentication headers
+
+2. Kube Proxy:
+
+o is a bastion built into the apiserver
+o connects a user outside of the cluster to cluster IPs which otherwise might not be reachable
+o runs in the apiserver processes
+o client to proxy uses HTTPS (or http if apiserver so configured)
+o proxy to target may use HTTP or HTTPS as chosen by proxy using available information
+o can be used to reach a Node, Pod, or Service
+o does load balancing when used to reach a Service
+
+3. Kube-Apiserver Proxy:
+
+o runs on each node
+o proxies UDP, TCP and SCTP
+o does not understand HTTP
+o provides load balancing
+o is only used to reach services
+
+=======
+
+
+1. Stateful vs Stateless Application 
+2. FE & Backend
+	 How ingress & netpol will be deployed
+	 How DB password can be configured in FE
+	 db client to be installed into FE pod to connect to DB & fetch info. 
+		I am not ready to change the application image. How to approach it  - ans is init container 
+		 can we run init container as root, if running any app with root previlege is disabled on the tenant. - capabilities 
+ 
+3. LivenessProbe, probing techniques used 
+	 For an App, if I want to perform Liveness probe, 
+		what all details you would need from me ?
+	 parameters in probe : 
+	 	 initialDelaySeconds - 
+		 periodSeconds -
+4. Kubectl set image command
+
+
+5. RBAC
+* Role & Rolebinding, ClusterRole & Clusterrolebinding
+* Defender agent on K8s cluster 
+* Istio & Linkerd 
+* 
+
+6. How PV & PVC binds ?
+	- StorageClass, ReclaimPolicy & AccessMode
+	
+Parameters based on which pV & PVC binds to each other ?
+
+7. What is a storageClass ?
+   
+8. HPA vs VPA ?
+	Pre-requisites ?
+
+9. Static Pod ?
