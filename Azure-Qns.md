@@ -23,7 +23,10 @@ So how to solve this issue ?
 10. Attach PV as 
 
 11. What is Service Principal ?
+	* Can MFA be enabled for it ? - No
 12. What is Managed Service Idenity ?
+	* Can MFA be enabled for it ? - Not applicable
+	* Meant for connection between Azure Resources, not outside 
 
 13. What is Private DNS Zone ?
 	* What is Virtual Network Link ?
