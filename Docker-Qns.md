@@ -13,6 +13,7 @@
   * Docker Network 
   * Build image from Scratch
   * Whats Docker Multistage Build ? 
+    *  	
   * From Base image as label-1
 		RUN 
 		RUN 
@@ -24,4 +25,4 @@
 1. How to build an image from a docker container ?
 2. containerd vs docker ?
 3. with docker having restrictions on limit for pulling images, how to build new docker images ? Alternative to docker ?
-4. 
+4. Docker Copy VS Docker add command
