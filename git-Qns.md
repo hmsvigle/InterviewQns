@@ -3,4 +3,5 @@
 3. Whats imp parameter while merging a PR.
 4. If local branch is behind the remote branch with 2 commits. Command to sync it ?
 5. Command to find diff between 2 local branches ?
-6. 
+6. Diff between Git pull & git fetch ?
+7. Git rebase - Functionality ?
