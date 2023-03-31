@@ -27,7 +27,10 @@ Declerative & scripted pipelines
 
 	* Jobs: Install plugins & write job. Define jenkins flow (Declarative/Script)
 8. Multi-Branch Pipeline
-9. 
+9. How to set Env variable while installing Jenkins ?
+10. How to pass Variables like - Max memory allocation for Jenkins instance ?
+11. How to set user input in a pipeline ?
+12. 
  
 Goovy:
 ``````
