@@ -1,6 +1,6 @@
 
 #### 1. What is Variable Group ?
-##### 1.1 Types of Variables ?
+##### 1.1 Types of Variables ? [Link](https://learn.microsoft.com/en-us/azure/devops/pipelines/process/variables?view=azure-devops&tabs=yaml%2Cbatch#understand-variable-syntax)
    * User-Defined Variable:
    * User-Defined Multiline Variable
    * System variable
