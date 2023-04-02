@@ -9,6 +9,9 @@
    * Global Scope
    * Job lavel Scope
    * Task label Scope
+##### 1.3 How to create a variable group in yaml pipeline ?
+   > * Variable group cant be created in yaml pipeline. Rather has to be created outside & be used in the yaml pipeline.
+   >  
 #### 2. How to select Approver & Reviewer dynamically ?
 #### 3. How to configure parallel jobs ?
 #### 4. How to define dependency of current task on previous task ? ( Sequential Job )
