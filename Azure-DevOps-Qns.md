@@ -3,7 +3,7 @@
 ##### 1.1 Types of Variables ? [Link](https://learn.microsoft.com/en-us/azure/devops/pipelines/process/variables?view=azure-devops&tabs=yaml%2Cbatch#understand-variable-syntax)
    * User-Defined Variable:
    * User-Defined Multiline Variable
-   * System variable
+   * System variables: Build.Clean | Syste.AccessToken | System.Debug etc. [Link](https://learn.microsoft.com/en-us/azure/devops/pipelines/build/variables?view=azure-devops&tabs=yaml) 
    * Environment Variables
 ##### 1.2 Types of Scope of Bvariable:
    * Global Scope
