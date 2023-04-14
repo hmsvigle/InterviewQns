@@ -282,3 +282,5 @@ Scenario based Qns:
 13. Kubernetes vs Docker Swarm ?
 14. For AKS clutster, 
 
+15. Issue: `Kubernetes Garbage Collection fails - FreeDiskSpaceFailed & ImageGCFailed` What is this issue & how to be resolved ?
+16. 
