@@ -6,7 +6,7 @@ def skipRemainingStages = false
 def GIT_COMMIT_Message
 def GIT_Repo_Name 
 def namespace
-def EMAIL_RECIPIENTS = "hari.p@mercedes-benz.com;sri_mithune.selvaraj@mercedes-benz.com;tata.potharaven@mercedes-benz.com"
+def EMAIL_RECIPIENTS = "hmsvigle@gmail.com"
 def initialDeploymentresult
 def yamlEnv
 
