@@ -1,0 +1,785 @@
+def envName
+def tagName
+def oldTagName
+def props
+def skipRemainingStages = false
+def GIT_COMMIT_Message
+def GIT_Repo_Name 
+def namespace
+def EMAIL_RECIPIENTS = "hari.p@mercedes-benz.com;sri_mithune.selvaraj@mercedes-benz.com;tata.potharaven@mercedes-benz.com"
+def initialDeploymentresult
+def yamlEnv
+
+pipeline {
+    agent {
+        label 'project'
+    }
+    environment {
+        props = readProperties file: 'pipeline.properties'
+        JAVA_HOME = "${props.JAVA_HOME}"
+        GRADLE_HOME = "${props.GRADLE_HOME}"
+        //SONAR_SCANNER_OPTS ="${props.SONAR_SCANNER_OPTS}"
+        SCANNER_HOME = "${props.SCANNER_HOME}"
+        PROJECT_NAME =  "${props.PROJECT_NAME}"
+        PATH = "${props.JAVA_HOME}/bin:${props.GRADLE_HOME}/bin:${PATH}"
+        REPOSITORY_NAME = "${props.REPOSITORY}"
+    }
+    stages {
+        stage ('Prepare Environment') {
+            steps{
+                script {
+                    def GIT_COMMIT = (sh(returnStdout: true, script: "git log -n 1 --pretty=format:'%f'").trim()).toUpperCase()
+                    GIT_COMMIT_Message = GIT_COMMIT.toString()
+                    echo "GIT_COMMIT_Message: ${GIT_COMMIT_Message}"
+
+					//echo "JOBNAME: ${JOB_NAME}"
+                    //def arr = (env.JOB_NAME).split('/')
+                    //GIT_Repo_Name = arr[2]
+                    //echo "GIT_Repo_Name:${GIT_Repo_Name}"
+
+					// To be used once all the deployment names are streamlined to GIT_Repo_Name instead of REPOSITORY_NAME
+                    GIT_Repo_Name = determineRepoName()
+                    echo "GIT_Repo_Name: ${GIT_Repo_Name}"
+
+                    envName = getENV(BRANCH_NAME)
+                    echo "ENVIRONMENT: ${envName}"
+
+                    yamlEnv = envName.toLowerCase()
+                    echo "YAML: ${yamlEnv}"
+
+					tagName = getTagName(BRANCH_NAME)
+                    echo "TAGNAME: ${tagName}"
+					
+                    namespace = getDHCNamespace(BRANCH_NAME)
+                  	echo "NAMESPACE: ${namespace}"
+                  	
+		    		sh 'printenv'
+                }
+            }
+            post{
+                failure{
+                    sendEmail(
+                        "${STAGE_NAME}",
+                        "NOTSUCCESS",
+                        "${RUN_DISPLAY_URL}",
+                        "${EMAIL_RECIPIENTS}"
+                    )
+                }
+                aborted{
+                    sendEmail(
+                        "${STAGE_NAME}",
+                        "ABORTED",
+                        "${RUN_DISPLAY_URL}",
+                        "${EMAIL_RECIPIENTS}"
+                    )
+                }
+            }
+        } 
+        stage ('Gradle Build') { 
+            when{
+                allOf{
+                    not { environment name: 'JAVA_HOME', value: '' }
+                    not { environment name: 'GRADLE_HOME', value: '' }
+                    not { environment name: 'PATH', value: '' }
+                }
+            }
+            steps{
+                script {    
+                    sh "gradle clean build jacocoTestReport"
+                }
+            }
+            post {
+                always {
+                    script {
+                        try {
+                            dir("build/jacocoHtml") {
+                                sh 'dir'
+                                publishReport(".", "index.html","Jacoco Html")
+                            }
+                        } catch (err) {
+                                echo "***** ERROR: JACOCO HTML Report generation issue. *****"
+                                sendEmail(
+                                    "${STAGE_NAME}",
+                                    "NOTSUCCESS",
+                                    "${RUN_DISPLAY_URL}",
+                                    "${EMAIL_RECIPIENTS}"
+                                )
+                        }
+                        try {
+                            dir("build/reports/tests") {
+                                sh 'dir'
+                                publishReport("test", "index.html","Unit Test")
+                            }
+                        } catch (err) {
+                                echo "***** ERROR: UNITTEST HTML Report generation issue. *****"
+                                sendEmail(
+                                    "${STAGE_NAME}",
+                                    "NOT SUCCESS",
+                                    "${RUN_DISPLAY_URL}",
+                                    "${EMAIL_RECIPIENTS}"
+                                )
+                        }	
+                    }
+                }
+            }
+        }
+        stage ('Sonar Validation') { 
+            when{
+                allOf{
+                    //not { environment name: 'SONAR_SCANNER_OPTS', value: '' }
+                    not { environment name: 'SCANNER_HOME', value: '' }
+                }
+            }
+            steps{
+                withSonarQubeEnv('Sonar') {
+                    //sh """
+                    //    $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectKey=$PROJECT_NAME -Dsonar.host.url=https://gsep.testing.com/sonar -Dhttps.proxyHost=53.244.194.32 -Dsonar.scm.provider=git $SONAR_SCANNER_OPTS -Djavax.net.ssl.trustStore=/home/build_dir/oracle_jdk_8/jdk1.8.0_191/jre/lib/security/cacerts -Djavax.net.ssl.trustStorePassword=changeit
+                    //    """
+                    //sh "$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectKey=$PROJECT_NAME -Dsonar.host.url=https://project-sonar.dot.testing.com/ -Dsonar.scm.provider=git -Djavax.net.ssl.trustStore=/home/ubuntu/jdk-11.0.13/lib/security/cacerts -Djavax.net.ssl.trustStorePassword=changeit"
+                    //sh "$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectKey=$PROJECT_NAME -Dsonar.host.url=https://project-sonar.dot.testing.com/ -Dsonar.scm.provider=git -Dhttps.proxyHost=http://security-proxy.emea.svc.corpintra.net -Dhttps.proxyPort=3128 -Djavax.net.ssl.trustStore=/home/ubuntu/jdk-11.0.13/lib/security/cacerts -Djavax.net.ssl.trustStorePassword=changeit"
+                    //sh "$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectKey=$PROJECT_NAME -Dsonar.host.url=https://project-sonar.dot.testing.com/ -Dsonar.scm.provider=git"
+                    //sh "$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectKey=$PROJECT_NAME $SONAR_SCANNER_OPTS"
+                    //sh "$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectKey=$PROJECT_NAME"
+                    //sh "$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectKey=$PROJECT_NAME -Dsonar.branch.name=$BRANCH_NAME"
+                    script {
+                        if (BRANCH_NAME.startsWith("PR-") && CHANGE_ID) {
+                          	sh "$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectKey=$PROJECT_NAME -Dsonar.pullrequest.key=$CHANGE_ID -Dsonar.pullrequest.branch=$CHANGE_BRANCH -Dsonar.pullrequest.base=$CHANGE_TARGET"
+                        } else {
+                          	sh "$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectKey=$PROJECT_NAME -Dsonar.branch.name=$BRANCH_NAME"
+                        }
+                    }
+                }
+            }
+            post{
+                failure{
+                    sendEmail(
+                        "${STAGE_NAME}",
+                        "NOTSUCCESS",
+                        "${RUN_DISPLAY_URL}",
+                        "${EMAIL_RECIPIENTS}"
+                    )
+                }
+                aborted{
+                    sendEmail(
+                        "${STAGE_NAME}",
+                        "ABORTED",
+                        "${RUN_DISPLAY_URL}",
+                        "${EMAIL_RECIPIENTS}"
+                    )
+                }
+            }
+        }
+        stage ('Build Docker Image') { 
+            when {
+                allOf{
+                    branch comparator: 'REGEXP', pattern: 'master|develop|dev-release.*'
+                  	//branch comparator: 'REGEXP', pattern: 'dev-release.*'
+
+					//branch comparator: 'REGEXP', pattern: 'dhc-release.*'
+                    not { environment name: 'REPOSITORY_NAME', value: '' }
+                    not { environment name: 'BUILD_NUMBER', value: '1' }
+                }
+            }
+            steps{
+                script {
+                    // ----------------------------------------------------------------------------------------------------------
+					// 				BELOW COMMENTED LINES WORKS WELL. TESTING BUILD COMMAND WITH TAG NAME DIRECTLY
+					// ----------------------------------------------------------------------------------------------------------
+                    ////sh """
+                    ////    cp ${WORKSPACE}/build/libs/${GIT_Repo_Name}-*.jar ${WORKSPACE}
+                    ////"""
+                    //sh "cp ${WORKSPACE}/build/libs/*.jar ${WORKSPACE}"
+                    //sh "docker build -t ${REPOSITORY_NAME}:${tagName} ."
+                    //sh "docker tag ${REPOSITORY_NAME}:${tagName} registry.app.corpintra.net/project/${REPOSITORY_NAME}:${tagName}"
+					// ----------------------------------------------------------------------------------------------------------
+
+					sh "cp ${WORKSPACE}/build/libs/*.jar ${WORKSPACE}"
+                    sh "docker build -t registry.app.corpintra.net/project/${REPOSITORY_NAME}:${tagName} ."
+                }
+            }
+            post{
+                failure{
+                    sendEmail(
+                        "${STAGE_NAME}",
+                        "NOTSUCCESS",
+                        "${RUN_DISPLAY_URL}",
+                        "${EMAIL_RECIPIENTS}"
+                    )
+                }
+                aborted{
+                    sendEmail(
+                        "${STAGE_NAME}",
+                        "ABORTED",
+                        "${RUN_DISPLAY_URL}",
+                        "${EMAIL_RECIPIENTS}"
+                    )
+                }
+            }
+        }
+        /*stage('Harbor Login'){
+            when {
+                allOf{
+                    not { environment name: 'REPOSITORY_NAME', value: '' }
+                    not { environment name: 'BUILD_NUMBER', value: '1' }
+                }
+            }
+            steps {
+                withCredentials([usernamePassword( credentialsId: 'HARBOR_LOGIN_CREDENTIALS', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]){
+                    sh 'echo docker login -u ${USERNAME} -p ${PASSWORD} registry.app.corpintra.net'
+                }
+            }
+        }
+        stage('Pushing Docker Image to Registry'){
+            when {
+                allOf{
+                    not { environment name: 'REPOSITORY_NAME', value: '' }
+                    not { environment name: 'BUILD_NUMBER', value: '1' }
+                }
+            }
+            steps {
+                //sh "docker push registry.app.corpintra.net/project/${GIT_Repo_Name}:dev-$BUILD_NUMBER"
+                sh "docker push registry.app.corpintra.net/project/${REPOSITORY_NAME}:${tagName}"
+            }
+            post{
+                failure{
+                    sendEmail(
+                        "${STAGE_NAME}",
+                        "NOTSUCCESS",
+                        "${RUN_DISPLAY_URL}",
+                        "${EMAIL_RECIPIENTS}"
+                    )
+                }
+                aborted{
+                    sendEmail(
+                        "${STAGE_NAME}",
+                        "ABORTED",
+                        "${RUN_DISPLAY_URL}",
+                        "${EMAIL_RECIPIENTS}"
+                    )
+                }
+            }
+        }*/
+        stage('Pushing Docker Image to Registry'){
+            when {
+                allOf{
+                    branch comparator: 'REGEXP', pattern: 'master|develop|dev-release.*'
+                  	//branch comparator: 'REGEXP', pattern: 'dev-release.*'
+
+					//branch comparator: 'REGEXP', pattern: 'dhc-release.*'
+                    not { environment name: 'REPOSITORY_NAME', value: '' }
+                    not { environment name: 'BUILD_NUMBER', value: '1' }
+                }
+            }
+            steps {
+                withCredentials([usernamePassword( credentialsId: 'HARBOR_LOGIN_CREDENTIALS', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]){
+                  	sh 'echo docker login -u ${USERNAME} -p ${PASSWORD} registry.app.corpintra.net'
+                    //sh "docker push registry.app.corpintra.net/project/${GIT_Repo_Name}:dev-$BUILD_NUMBER"
+                    sh "docker push registry.app.corpintra.net/project/${REPOSITORY_NAME}:${tagName}"
+                }
+            }
+            post{
+                //skipRemainingStages = true
+                failure{
+                    sendEmail(
+                        "${STAGE_NAME}",
+                        "NOTSUCCESS",
+                        "${RUN_DISPLAY_URL}",
+                        "${EMAIL_RECIPIENTS}"
+                    )
+                }
+                aborted{
+                    sendEmail(
+                        "${STAGE_NAME}",
+                        "ABORTED",
+                        "${RUN_DISPLAY_URL}",
+                        "${EMAIL_RECIPIENTS}"
+                    )
+                }
+            }
+        }
+        stage('Deploy to DHC CaaS'){
+			when {
+                allOf{
+                    branch comparator: 'REGEXP', pattern: 'master|develop|dev-release.*'
+                  	//branch comparator: 'REGEXP', pattern: 'dev-release.*'
+
+					//branch comparator: 'REGEXP', pattern: 'dhc-release.*'
+                  
+                    not { environment name: 'REPOSITORY_NAME', value: '' }
+                    not { environment name: 'BUILD_NUMBER', value: '1' }
+                    expression { 
+                        (!skipRemainingStages) 
+                    }
+                    expression { 
+                        (GIT_COMMIT_Message.contains("MERGE-PULL-REQUEST")) 
+                    }
+                }
+            }
+            steps {
+				script{
+                    if (envName.equalsIgnoreCase("PROD")) {
+                        withCredentials([file(credentialsId: "project-prod-harip10-config", variable: 'KUBE_CFG_FILE')]) {
+                            oldTagName = sh (
+								script: "echo `kubectl describe deployment ${REPOSITORY_NAME} -n ${namespace} --kubeconfig $KUBE_CFG_FILE| grep -i 'image' | cut -d':' -f3`",
+								returnStdout: true
+                            ).trim()
+                            sh "kubectl get ns --kubeconfig $KUBE_CFG_FILE"
+                            sh "helm upgrade ${REPOSITORY_NAME} --set image.tag=${tagName} ./helm/charts -f ./helm/values/${REPOSITORY_NAME}-${yamlEnv}-values.yaml -n ${namespace} --install --kubeconfig $KUBE_CFG_FILE -f -"
+
+                            echo "Calling getRolloutStatus method"
+                            initialDeploymentresult = getRolloutStatus(env.REPOSITORY_NAME,namespace,envName)
+                            echo "initialDeploymentresult:${initialDeploymentresult}"
+                            if (initialDeploymentresult.equalsIgnoreCase("FAILED") || initialDeploymentresult == null) {
+								skipRemainingStages = true
+								echo "${skipRemainingStages}"
+                            }
+                        }
+                    } else {
+                        withCredentials([file(credentialsId: "project-dev-secret-new", variable: 'KUBE_CFG_FILE')]){
+                            oldTagName = sh (
+								script: "echo `kubectl describe deployment ${REPOSITORY_NAME} -n ${namespace} --kubeconfig $KUBE_CFG_FILE| grep -i 'image' | cut -d':' -f3`",
+								returnStdout: true
+                            ).trim()
+                            sh "kubectl get ns --kubeconfig $KUBE_CFG_FILE"
+                            sh "helm upgrade ${REPOSITORY_NAME} --set image.tag=${tagName} ./helm/charts -f ./helm/values/${REPOSITORY_NAME}-${yamlEnv}-values.yaml -n ${namespace} --install --kubeconfig $KUBE_CFG_FILE -f -"
+                            
+                            echo "Calling getRolloutStatus method"
+                            initialDeploymentresult = getRolloutStatus(env.REPOSITORY_NAME,namespace,envName)
+                            echo "initialDeploymentresult:${initialDeploymentresult}"
+                            if (initialDeploymentresult.equalsIgnoreCase("FAILED") || initialDeploymentresult == null){
+								skipRemainingStages = true
+								echo "${skipRemainingStages}"
+                            }
+                        }
+					}
+                }
+                
+
+            }
+          	post {
+                failure{
+                    sendEmail(
+                        "${STAGE_NAME}",
+                        "NOTSUCCESS",
+                        "${RUN_DISPLAY_URL}",
+                        "${EMAIL_RECIPIENTS}"
+                    )
+                }
+                always{
+                    script {
+                        if (skipRemainingStages) {
+                              if(envName.equalsIgnoreCase("PROD")){
+                                withCredentials([file(credentialsId: "project-prod-harip10-config", variable: 'KUBE_CFG_FILE')]){
+    
+                                    echo "Deployment Failure Rolling back tag:${oldTagName}"
+                                    def buildRollbackresult = buildRollback(oldTagName,env.REPOSITORY_NAME,namespace,envName)
+                                    echo "buildRollbackresult:${buildRollbackresult}"
+                                    if (buildRollbackresult.equalsIgnoreCase("FAILED") || initialDeploymentresult == null){
+                                            echo "Caution: unable to Roll back the image: ${oldTagName} Please Take Action"
+                                            echo "Caution: unable to Roll back the image: ${oldTagName} Please Take Action"
+                                            echo "Caution: unable to Roll back the image: ${oldTagName} Please Take Action"
+                                            echo "Caution: unable to Roll back the image: ${oldTagName} Please Take Action"
+                                            echo "Caution: unable to Roll back the image: ${oldTagName} Please Take Action"
+                                        sendEmail(
+                                            "${STAGE_NAME}",
+                                            "NOTSUCCESS",
+                                            "${RUN_DISPLAY_URL}",
+                                            "${EMAIL_RECIPIENTS}"
+                                        )
+                                    }else {
+                                        echo "Always Block : Successful deployment"
+                                    }  
+                                }	
+                            }
+                          	else {
+                                withCredentials([file(credentialsId: "project-dev-secret-new", variable: 'KUBE_CFG_FILE')]){
+    
+                                    echo "Deployment Failure Rolling back tag:${oldTagName}"
+                                    def buildRollbackresult = buildRollback(oldTagName,env.REPOSITORY_NAME,namespace,envName)
+                                    echo "buildRollbackresult:${buildRollbackresult}"
+                                    if (buildRollbackresult.equalsIgnoreCase("FAILED") || initialDeploymentresult == null){
+                                            echo "Caution: unable to Roll back the image: ${oldTagName} Please Take Action"
+                                            echo "Caution: unable to Roll back the image: ${oldTagName} Please Take Action"
+                                            echo "Caution: unable to Roll back the image: ${oldTagName} Please Take Action"
+                                            echo "Caution: unable to Roll back the image: ${oldTagName} Please Take Action"
+                                            echo "Caution: unable to Roll back the image: ${oldTagName} Please Take Action"
+                                        sendEmail(
+                                            "${STAGE_NAME}",
+                                            "NOTSUCCESS",
+                                            "${RUN_DISPLAY_URL}",
+                                            "${EMAIL_RECIPIENTS}"
+                                        )
+                                    }else {
+                                        echo "Always Block : Successful deployment"
+                                    }  
+                                }
+                            }
+                            skipRemainingStages = false
+                        } else {
+                            echo "Always Block : Successful deployment"
+                        }	
+                    }
+                }
+                aborted {
+					script {
+						if(envName.equalsIgnoreCase("PROD")){
+                            withCredentials([file(credentialsId: "project-prod-harip10-config", variable: 'KUBE_CFG_FILE')]){
+                                sh '''kubectl get pods --kubeconfig $KUBE_CFG_FILE -l name=${REPOSITORY_NAME} -o \'jsonpath={..status.containerStatuses[0].state.waiting.message} {"\\n"}\'
+                                    kubectl get pods --kubeconfig $KUBE_CFG_FILE -l name=${REPOSITORY_NAME} -o \'jsonpath={..status.containerStatuses[0].state.waiting.reason} {"\\n"}\''''
+								sendEmail(
+									"${STAGE_NAME}",
+									"ABORTED",
+									"${RUN_DISPLAY_URL}",
+									"${EMAIL_RECIPIENTS}"
+								)
+                            }
+						} else {
+                            withCredentials([file(credentialsId: "project-dev-secret-new", variable: 'KUBE_CFG_FILE')]){
+                                sh '''kubectl get pods --kubeconfig $KUBE_CFG_FILE -l name=${REPOSITORY_NAME} -o \'jsonpath={..status.containerStatuses[0].state.waiting.message} {"\\n"}\'
+                                    kubectl get pods --kubeconfig $KUBE_CFG_FILE -l name=${REPOSITORY_NAME} -o \'jsonpath={..status.containerStatuses[0].state.waiting.reason} {"\\n"}\''''
+								sendEmail(
+									"${STAGE_NAME}",
+									"ABORTED",
+									"${RUN_DISPLAY_URL}",
+									"${EMAIL_RECIPIENTS}"
+								)
+                            }
+						}
+					}
+				}
+            }
+        }
+            	
+      	stage('POD Services Status Check'){
+            when {
+                allOf{
+                    branch comparator: 'REGEXP', pattern: 'master|develop|dev-release.*'
+                  	//branch comparator: 'REGEXP', pattern: 'dev-release.*'
+
+                	//branch comparator: 'REGEXP', pattern: 'dhc-release.*'
+
+                    not { environment name: 'BUILD_NUMBER', value: '1' }
+
+                    expression { 
+                        (!skipRemainingStages) 
+                    }
+                    
+                    expression { 
+                        (GIT_COMMIT_Message.contains("MERGE-PULL-REQUEST")) 
+                    }
+                }
+            }
+/*            environment { 
+                projectKey = "adddb08f-81c0-48ab-b43e-257633eca18e"
+                RMS_URL = "http://sgscaiu0869.in623.corpintra.net:8034/releaseManagement/save/versions"
+                applicationName = "${GIT_Repo_Name}"
+                env = "${envName}"
+                envLevel= 2
+                projectName = "project" 
+                //applicationName = "DATA-RETENTION-BATCH-service"
+            }*/
+            steps {
+                script{
+                    if (envName.equalsIgnoreCase("PROD")) {
+                        withCredentials([file(credentialsId: "project-prod-harip10-config", variable: 'KUBE_CFG_FILE')]) {
+                          def serviceStatus = getServiceStatus(env.REPOSITORY_NAME,namespace,envName)
+                          if(serviceStatus.equalsIgnoreCase("FAILED") || serviceStatus == null) {
+                                echo "Caution: unable to bring the Service up Please Take Action"
+                                echo "Caution: unable to bring the Service up Please Take Action"
+                                echo "Caution: unable to bring the Service up Please Take Action"
+                                echo "Caution: unable to bring the Service up Please Take Action"
+                                echo "Caution: unable to bring the Service up Please Take Action"
+                                echo "Caution: unable to bring the Service up Please Take Action"
+                                sendEmail(
+									"${STAGE_NAME}",
+									"NOTSUCCESS",
+									"${RUN_DISPLAY_URL}",
+								    "${EMAIL_RECIPIENTS}"
+								)
+							} else {
+								echo "Always Block : Services are up"
+							} 
+                        }
+                    }
+                  	else {
+                       withCredentials([file(credentialsId: "project-dev-secret-new", variable: 'KUBE_CFG_FILE')]) {
+                          def serviceStatus = getServiceStatus(env.REPOSITORY_NAME,namespace,envName)
+                          if(serviceStatus.equalsIgnoreCase("FAILED") || serviceStatus == null){
+                                echo "Caution: unable to bring the Service up Please Take Action"
+                                echo "Caution: unable to bring the Service up Please Take Action"
+                                echo "Caution: unable to bring the Service up Please Take Action"
+                                echo "Caution: unable to bring the Service up Please Take Action"
+                                echo "Caution: unable to bring the Service up Please Take Action"
+                                echo "Caution: unable to bring the Service up Please Take Action"
+                                sendEmail(
+									"${STAGE_NAME}",
+									"NOTSUCCESS",
+									"${RUN_DISPLAY_URL}",
+								    "${EMAIL_RECIPIENTS}"
+                                )
+							} else {
+								echo "Always Block : Services are up"
+							}
+						}
+                    }
+                }
+            }
+            post{
+                failure{
+                    /*script{
+                        if (env.env == "PROD"){
+                            tafUpdate = sh (
+                            script: "echo `/opt/taf-kpi/taf-kpi.sh  -t gsep -n project -o MDINNEL -di H008070A0900000 -d ITD/T -cc 059-6619 -r FAILURE`",
+                            returnStdout: true
+                            ).trim()
+                        }                            
+                        sh 'curl -d "applicationName=${applicationName}&env=${env}&envLevel=${envLevel}&projectName=${projectName}&releaseStatus=FAIL&releaseVersion=${BUILD_NUMBER}&projectKey=${projectKey}" -X POST $RMS_URL'
+                        
+                    }*/  
+                    sendEmail(
+                        "${STAGE_NAME}",
+                        "NOTSUCCESS",
+                        "${RUN_DISPLAY_URL}",
+                        "${EMAIL_RECIPIENTS}"
+                    )
+                }
+                aborted{
+                    sendEmail(
+                        "${STAGE_NAME}",
+                        "ABORTED",
+                        "${RUN_DISPLAY_URL}",
+                        "${EMAIL_RECIPIENTS}"
+                    )
+                }
+                /*success{
+                    script{
+                        if (env.env == "PROD"){
+                            tafUpdate = sh (
+                            script: "echo `/opt/taf-kpi/taf-kpi.sh  -t gsep -n project -o MDINNEL -di H008070A0900000 -d ITD/T -cc 059-6619 -r SUCCESS`",
+                            returnStdout: true
+                            ).trim()
+                        }                            
+                         sh 'curl -d "applicationName=${applicationName}&env=${env}&envLevel=${envLevel}&projectName=${projectName}&releaseStatus=PASS&releaseVersion=${BUILD_NUMBER}&projectKey=${projectKey}" -X POST $RMS_URL'
+                    }
+                   
+                }*/
+            }
+        }
+    }
+}
+
+def sendEmail(stageName,stageResult,url,emailID) {
+    emailext (
+        subject: "Job:${JOB_NAME} || BUILD_NUMBER:${env.BUILD_NUMBER} ||  STATUS:${currentBuild.result}",
+        body:""" 
+                <h3>Greetings from project Team &#127773; </h3>
+                <b>$JOB_NAME latest update:</b><br/>
+                <hr> JOB EXECUTION HAS BEEN COMPLETED SUCCESSFULLY </hr>
+                <hr> STATUS:$stageResult</hr>
+                <hr> STAGE:$stageName</hr>
+                <hr> URL:$url</hr>
+                <h4>Good luck &#128077; </h4>
+                <h4>project Team</h4>
+                <h6><span style='font-size:40px;'>&#128378;</span><i>a journey towards 3D Master KBL...</i></h4>
+            """,
+        to: "${emailID}",
+        from: "te_projectcicd.pool-id@mercedes-benz.com",
+        mimeType: "text/html")
+}
+
+def String determineRepoName() {
+    return scm.getUserRemoteConfigs()[0].getUrl().tokenize('/').last().split("\\.")[0]
+}
+
+def publishReport(reportFldr, reportFileName,rName){
+    publishHTML(target: [allowMissing: false, alwaysLinkToLastBuild: false, keepAll: true, reportDir: reportFldr,
+    reportFiles: reportFileName, reportName: rName])
+}
+
+def getENV(strBranchName){
+    def result = null
+    def strTemp = strBranchName.toUpperCase()
+    echo "BRANCH:${strTemp}"
+    switch(strTemp) {
+    case "MASTER":
+        result = "PROD"
+        break
+    case "DEVELOP":
+        result = "INT"
+        break
+    case ~/DEV-RELEASE\/(\d\d+\.)?(\d\d)?/:
+    //case ~/DHC-RELEASE\/(\d\d+\.)?(\d\d)?/:
+		result = "DIT"
+		//result = "DEV"
+        break
+    }
+    return "${result}"
+}
+
+def getTagName(branchName){
+    def result = null
+    def strTemp = branchName.toUpperCase()
+	switch(strTemp) {
+    case "MASTER":
+        result = "prod.latest.${BUILD_NUMBER}"
+        break
+    case "DEVELOP":
+        result = "int.latest.${BUILD_NUMBER}"
+        break
+    case ~/DEV-RELEASE\/(\d\d+\.)?(\d\d)?/:
+    //case ~/DHC-RELEASE\/(\d\d+\.)?(\d\d)?/:
+        def strVersion = BRANCH_NAME.substring(BRANCH_NAME.length()-5)
+        result = "dit.latest.${strVersion}.${BUILD_NUMBER}"
+        //result = "dev.latest.${strVersion}.${BUILD_NUMBER}"
+        break
+    }
+    return "${result}"
+}
+
+def getServiceStatus(projectName,namespace,envName){
+    def kubectl_service_status = null
+    def result = null
+    for (int i = 0; i <= 10; i++) {
+        if (!(i == 10)) {
+            //script: "echo `kubectl logs --follow=false ${dKind}/${projectName} | grep 'Started\\|JVM'`",
+            kubectl_service_status = sh (
+                script: "echo `kubectl logs --follow=false deployment/${projectName} -n ${namespace} --kubeconfig $KUBE_CFG_FILE| grep 'Started\\|JVM'`",
+                returnStdout: true
+            ).trim()
+            echo "kubectl_service_status in First Block:${kubectl_service_status}"
+        } else {
+            kubectl_service_status = sh (
+                script: "echo `kubectl logs --follow=false deployment/${projectName} -n ${namespace}`",
+                returnStdout: true
+            ).trim()
+        }
+
+        if (kubectl_service_status.contains("JVM running") || kubectl_service_status.contains("JVM' running")) {
+            echo "SUCCESS"
+            result = "PASSED"
+            break;
+        } else if ((i == 10) && (kubectl_service_status.contains("Starting Servlet Engine"))) {
+            echo "I am in 2 Block of Services status check"
+            for (int j = 0; j <= 5; j++) {
+                kubectl_service_status = sh (
+                    script: "echo `kubectl logs --follow=false deployment/${projectName} -n ${namespace} --kubeconfig $KUBE_CFG_FILE`",
+                    returnStdout: true
+                ).trim()
+
+                echo "kubectl_service_status in Second Block :${kubectl_service_status}"
+                if (kubectl_service_status.contains("JVM running") || kubectl_service_status.contains("JVM' running")) {
+                    echo "SUCCESS"
+                    result = "PASSED"
+                    break;
+                } else if (j == 5) {
+                    result = "FAILED"
+                    break;
+                }
+                sh 'sleep 30'
+            }
+        } else if (kubectl_service_status.contains("XYZ")) {
+            result = "FAILED"
+            break;
+        }
+        sh 'sleep 30'
+    }
+    return "${result}" 
+} 
+
+def buildRollback(tag,repository,namespace,envName) {
+    def result = null
+        OLD_TAG = sh (
+            script: "echo `kubectl describe deployment ${repository} -n ${namespace} --kubeconfig $KUBE_CFG_FILE| grep -i 'image' | cut -d':' -f3`",
+            returnStdout: true
+        ).trim()
+    if (OLD_TAG == tag){
+        echo "buildRollback Method: Automatic Rollback has happened already"
+        result = "PASSED"
+    } else{ 
+        echo "Automatic Rollback has been failed so initiating the rollback process by script"
+        //sh """
+        //    kubectl set image ${dKind}/${dcProject} ${dcProject}=registry.app.corpintra.net/project/${dhcRegistry}:${tag}
+        //"""
+        sh "kubectl get ns --kubeconfig $KUBE_CFG_FILE"
+        sh "helm upgrade ${repository} --set image.tag=${tag} ./helm/charts -f ./helm/values/${repository}-values.yaml -n ${namespace} --install --kubeconfig $KUBE_CFG_FILE -f -"
+
+        def rolloutResult = getRolloutStatus(repository,namespace,envName)
+        echo "status:${rolloutResult}"
+
+        if (rolloutResult.equalsIgnoreCase("FAILED") || rolloutResult == null){
+            echo "Script initiated Rollback: Failed"
+            result = "FAILED"
+        } else {
+            echo "Script initiated Rollback: Passed"
+            result = "PASSED"
+        }
+    
+    }   
+     return "${result}"
+}
+
+def getRolloutStatus(projectName, namespace,envName){
+
+    //echo "deploymentKind:${dKind}"
+
+    def result = null
+    for (int i = 0; i <= 10; i++) {
+        kubectl_rollout_status = sh (
+            script: "kubectl rollout status deployment/${projectName} -n ${namespace} --watch=false --kubeconfig $KUBE_CFG_FILE",
+            returnStdout: true
+        ).trim()
+        echo "kubectl_rollout_status in First Block:${kubectl_rollout_status}"
+        if (kubectl_rollout_status.contains("successfully rolled out")) {
+            echo "SUCCESS"
+            result = "PASSED"
+            break;
+        } else if ((i == 10) && (kubectl_rollout_status.contains("Waiting for rollout to finish"))) {
+            for (int j = 0; j <= 5; j++) {
+                if(envName.equalsIgnoreCase("DIT")) {
+                    kubectl_rollout_status = sh (
+                        script: "kubectl rollout status deployment/${projectName} -n ${namespace} --watch=false --kubeconfig $KUBE_CFG_FILE",
+                        returnStdout: true
+                    ).trim()
+                }
+                else if(envName.equalsIgnoreCase("INT")) {
+                    kubectl_rollout_status = sh (
+                        script: "kubectl rollout status deployment/${projectName} -n ${namespace} --watch=false --kubeconfig $KUBE_CFG_FILE",
+                        returnStdout: true
+                    ).trim()
+                }
+                echo "kubectl_rollout_status in Second Block :${kubectl_rollout_status}"
+                if ($kubectl_rollout_status.contains("successfully rolled out")) {
+                    echo "SUCCESS"
+                    result = "PASSED"
+                    break;
+                } else if (j == 5) {
+                    result = "FAILED"
+                }
+                sh 'sleep 30'
+            }
+        } else if (kubectl_rollout_status.contains("")) {
+            result = "FAILED"
+        }
+        sh 'sleep 30'
+    }
+    return "${result}" 
+}
+
+def getDHCNamespace(strBranchName) {
+    def result = null
+    def strTemp = strBranchName.toUpperCase()
+    switch(strTemp) {
+    case "MASTER":
+        result = "project-prod"
+        break
+    case "DEVELOP":
+        result = "project-int"
+        break
+    case ~/DEV-RELEASE\/(\d\d+\.)?(\d\d)?/:
+		result = "project-dit"
+    //case ~/DHC-RELEASE\/(\d\d+\.)?(\d\d)?/:
+	//	result = "project-dev"
+		break
+    }
+    return "${result}"
+}
