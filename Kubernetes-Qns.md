@@ -1,5 +1,5 @@
 * Helm 
-	- Charts & Subcharts
+  - Charts & Subcharts
 * Docker Architecture:
 	
 * SecurityContexts
@@ -281,6 +281,7 @@ Scenario based Qns:
 	--> What you would do ?
 13. Kubernetes vs Docker Swarm ?
 14. For AKS clutster, 
-
 15. Issue: `Kubernetes Garbage Collection fails - FreeDiskSpaceFailed & ImageGCFailed` What is this issue & how to be resolved ?
-16. 
+16. Deploy a Application pod, perform pre-check that DB is runnig. How to achieve this scenario ? Ans:- Init container
+17. How to set DR for Kubernetes Tenants ?
+18.  
