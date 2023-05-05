@@ -1,10 +1,10 @@
-Jenkins:
-````````
+### Jenkins:
+
 1. What is pre-requisite for installing jenkins ? - Java & plugins (pipeline) to install after jenkins
 2. What authentication method used in jenkins ?
-  - Store user data and Credentials in an internal database.
-  - Use the Authentication Mechanism defined by the application server on which it is deployed.
-  - Authenticate against LDAP server.
+   - Store user data and Credentials in an internal database.
+   - Use the Authentication Mechanism defined by the application server on which it is deployed.
+   - Authenticate against LDAP server.
 3. How to integrate jenkins ui with oidc ?
 4. How do u authenticate Git from jenkins to scan the branches/other related repos ?
 5. Have you ever setup a build job ? Explain steps.
