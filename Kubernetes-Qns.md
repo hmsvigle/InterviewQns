@@ -76,7 +76,10 @@ How you can
 1. How PV & PVC binds ?
 	- ClassName, ReclaimPolicy & AccessMode
 	- persistentVolumeReclaimPolicy
-
+1.1 What is Static & Dynamic Persistent Volume ?
+  * If PV is created first & PVC is created next to bind to that PV --> Static PV
+  * If only PVC is deployed & configured the same into Deployment/Pod. Which automatically deploys a PV & binds to PVC. ==> Dynamic PV
+  
 Parameters based on which pV & PVC binds to each other ?
 
 2. What is a storageClass ?
