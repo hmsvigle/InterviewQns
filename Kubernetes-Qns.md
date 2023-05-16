@@ -10,6 +10,7 @@
   * I deployed a Deployment. But i dont see any pods coming up. How to troubleshoot ?
 * What ingress controller can be used ?
 * Annotation Vs Labels 
+* Can I use PV & PVC in Statefulset, instead of VolumeClaimTemplate ? What will happen if I dont use ?
 
 * Static Pod :-
 * Whats the Evicted status means ?
