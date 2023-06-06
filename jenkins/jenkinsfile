@@ -190,11 +190,11 @@ pipeline {
                     ////"""
                     //sh "cp ${WORKSPACE}/build/libs/*.jar ${WORKSPACE}"
                     //sh "docker build -t ${REPOSITORY_NAME}:${tagName} ."
-                    //sh "docker tag ${REPOSITORY_NAME}:${tagName} registry.app.corpintra.net/project/${REPOSITORY_NAME}:${tagName}"
+                    //sh "docker tag ${REPOSITORY_NAME}:${tagName} docker.com/project/${REPOSITORY_NAME}:${tagName}"
 					// ----------------------------------------------------------------------------------------------------------
 
 					sh "cp ${WORKSPACE}/build/libs/*.jar ${WORKSPACE}"
-                    sh "docker build -t registry.app.corpintra.net/project/${REPOSITORY_NAME}:${tagName} ."
+                    sh "docker build -t dockerhub.com/project/${REPOSITORY_NAME}:${tagName} ."
                 }
             }
             post{
@@ -225,7 +225,7 @@ pipeline {
             }
             steps {
                 withCredentials([usernamePassword( credentialsId: 'HARBOR_LOGIN_CREDENTIALS', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]){
-                    sh 'echo docker login -u ${USERNAME} -p ${PASSWORD} registry.app.corpintra.net'
+                    sh 'echo docker login -u ${USERNAME} -p ${PASSWORD} dockerhub.com'
                 }
             }
         }
@@ -583,7 +583,7 @@ def sendEmail(stageName,stageResult,url,emailID) {
                 <h6><span style='font-size:40px;'>&#128378;</span><i>a journey towards 3D Master KBL...</i></h4>
             """,
         to: "${emailID}",
-        from: "te_projectcicd.pool-id@mercedes-benz.com",
+        from: "project-id@gmail.com",
         mimeType: "text/html")
 }
 
