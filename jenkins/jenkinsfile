@@ -133,7 +133,7 @@ pipeline {
             steps{
                 withSonarQubeEnv('Sonar') {
                     //sh """
-                    //    $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectKey=$PROJECT_NAME -Dsonar.host.url=https://gsep.testing.com/sonar -Dhttps.proxyHost=53.244.194.32 -Dsonar.scm.provider=git $SONAR_SCANNER_OPTS -Djavax.net.ssl.trustStore=/home/build_dir/oracle_jdk_8/jdk1.8.0_191/jre/lib/security/cacerts -Djavax.net.ssl.trustStorePassword=changeit
+                    //    $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectKey=$PROJECT_NAME -Dsonar.host.url=https://gsep.testing.com/sonar -Dhttps.proxyHost=101.203.303.404 -Dsonar.scm.provider=git $SONAR_SCANNER_OPTS -Djavax.net.ssl.trustStore=/home/build_dir/oracle_jdk_8/jdk1.8.0_191/jre/lib/security/cacerts -Djavax.net.ssl.trustStorePassword=changeit
                     //    """
                     //sh "$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectKey=$PROJECT_NAME -Dsonar.host.url=https://project-sonar.dot.testing.com/ -Dsonar.scm.provider=git -Djavax.net.ssl.trustStore=/home/ubuntu/jdk-11.0.13/lib/security/cacerts -Djavax.net.ssl.trustStorePassword=changeit"
                     //sh "$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectKey=$PROJECT_NAME -Dsonar.host.url=https://project-sonar.dot.testing.com/ -Dsonar.scm.provider=git -Dhttps.proxyHost=http://security-proxy -Dhttps.proxyPort=3128 -Djavax.net.ssl.trustStore=/home/ubuntu/jdk-11.0.13/lib/security/cacerts -Djavax.net.ssl.trustStorePassword=changeit"
@@ -175,7 +175,7 @@ pipeline {
                     branch comparator: 'REGEXP', pattern: 'master|develop|dev-release.*'
                   	//branch comparator: 'REGEXP', pattern: 'dev-release.*'
 
-					//branch comparator: 'REGEXP', pattern: 'dhc-release.*'
+					//branch comparator: 'REGEXP', pattern: 'release.*'
                     not { environment name: 'REPOSITORY_NAME', value: '' }
                     not { environment name: 'BUILD_NUMBER', value: '1' }
                 }
@@ -224,7 +224,7 @@ pipeline {
                 }
             }
             steps {
-                withCredentials([usernamePassword( credentialsId: 'HARBOR_LOGIN_CREDENTIALS', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]){
+                withCredentials([usernamePassword( credentialsId: 'LOGIN_CREDENTIALS', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]){
                     sh 'echo docker login -u ${USERNAME} -p ${PASSWORD} dockerhub.com'
                 }
             }
@@ -265,13 +265,13 @@ pipeline {
                     branch comparator: 'REGEXP', pattern: 'master|develop|dev-release.*'
                   	//branch comparator: 'REGEXP', pattern: 'dev-release.*'
 
-					//branch comparator: 'REGEXP', pattern: 'dhc-release.*'
+					//branch comparator: 'REGEXP', pattern: 'release.*'
                     not { environment name: 'REPOSITORY_NAME', value: '' }
                     not { environment name: 'BUILD_NUMBER', value: '1' }
                 }
             }
             steps {
-                withCredentials([usernamePassword( credentialsId: 'HARBOR_LOGIN_CREDENTIALS', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]){
+                withCredentials([usernamePassword( credentialsId: 'LOGIN_CREDENTIALS', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]){
                   	sh 'echo docker login -u ${USERNAME} -p ${PASSWORD} dockerhub.com'
                     //sh "docker push dockerhub.com/project/${GIT_Repo_Name}:dev-$BUILD_NUMBER"
                     sh "docker push dockerhub.com/project/${REPOSITORY_NAME}:${tagName}"
@@ -297,13 +297,13 @@ pipeline {
                 }
             }
         }
-        stage('Deploy to DHC CaaS'){
+        stage('Deploy to K8s Cluster'){
 			when {
                 allOf{
                     branch comparator: 'REGEXP', pattern: 'master|develop|dev-release.*'
                   	//branch comparator: 'REGEXP', pattern: 'dev-release.*'
 
-					//branch comparator: 'REGEXP', pattern: 'dhc-release.*'
+					//branch comparator: 'REGEXP', pattern: 'release.*'
                   
                     not { environment name: 'REPOSITORY_NAME', value: '' }
                     not { environment name: 'BUILD_NUMBER', value: '1' }
@@ -471,7 +471,7 @@ pipeline {
             }
 /*            environment { 
                 projectKey = "adddb08f-81c0-48ab-b43e-257633eca18e"
-                RMS_URL = "http://sgscaiu0869.in623.corpintra.net:8034/releaseManagement/save/versions"
+                RMS_URL = "http://web-app-url/releaseManagement/save/versions"
                 applicationName = "${GIT_Repo_Name}"
                 env = "${envName}"
                 envLevel= 2
@@ -608,7 +608,7 @@ def getENV(strBranchName){
         result = "INT"
         break
     case ~/DEV-RELEASE\/(\d\d+\.)?(\d\d)?/:
-    //case ~/DHC-RELEASE\/(\d\d+\.)?(\d\d)?/:
+    //case ~/RELEASE\/(\d\d+\.)?(\d\d)?/:
 		result = "DIT"
 		//result = "DEV"
         break
@@ -627,7 +627,7 @@ def getTagName(branchName){
         result = "int.latest.${BUILD_NUMBER}"
         break
     case ~/DEV-RELEASE\/(\d\d+\.)?(\d\d)?/:
-    //case ~/DHC-RELEASE\/(\d\d+\.)?(\d\d)?/:
+    //case ~/RELEASE\/(\d\d+\.)?(\d\d)?/:
         def strVersion = BRANCH_NAME.substring(BRANCH_NAME.length()-5)
         result = "dit.latest.${strVersion}.${BUILD_NUMBER}"
         //result = "dev.latest.${strVersion}.${BUILD_NUMBER}"
@@ -698,7 +698,7 @@ def buildRollback(tag,repository,namespace,envName) {
     } else{ 
         echo "Automatic Rollback has been failed so initiating the rollback process by script"
         //sh """
-        //    kubectl set image ${dKind}/${dcProject} ${dcProject}=registry.app.corpintra.net/project/${dhcRegistry}:${tag}
+        //    kubectl set image ${dKind}/${dcProject} ${dcProject}=dockerhub.com/project/${dhcRegistry}:${tag}
         //"""
         sh "kubectl get ns --kubeconfig $KUBE_CFG_FILE"
         sh "helm upgrade ${repository} --set image.tag=${tag} ./helm/charts -f ./helm/values/${repository}-values.yaml -n ${namespace} --install --kubeconfig $KUBE_CFG_FILE -f -"
@@ -765,7 +765,7 @@ def getRolloutStatus(projectName, namespace,envName){
     return "${result}" 
 }
 
-def getDHCNamespace(strBranchName) {
+def getNamespace(strBranchName) {
     def result = null
     def strTemp = strBranchName.toUpperCase()
     switch(strTemp) {
@@ -777,7 +777,7 @@ def getDHCNamespace(strBranchName) {
         break
     case ~/DEV-RELEASE\/(\d\d+\.)?(\d\d)?/:
 		result = "project-dit"
-    //case ~/DHC-RELEASE\/(\d\d+\.)?(\d\d)?/:
+    //case ~/RELEASE\/(\d\d+\.)?(\d\d)?/:
 	//	result = "project-dev"
 		break
     }
